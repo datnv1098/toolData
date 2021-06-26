@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link class="jsbin" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1/themes/base/jquery-ui.css" rel="stylesheet" type="text/css" />
+<script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jquery/1/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.0/FileSaver.min.js" integrity="sha512-csNcFYJniKjJxRWRV1R7fvnXrycHP6qDR21mgz1ZP55xY5d+aHLfo9/FcGDQLfn2IfngbAHd8LdfsagcCqgTcQ==" crossorigin="anonymous"></script>
+<script class="jsbin" src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.0/jquery-ui.min.js"></script>
+
+<meta charset=utf-8 />
+<title>JS Bin</title>
+<script type="text/javascript">
+$(document).ready(function() {
+    isMouseDown = false
+
+    $('body').mousedown(function() {
+        isMouseDown = true;
+    })
+    .mouseup(function() {
+        isMouseDown = false;
+    });
+});
+</script>
+<style>
+  article, aside, figure, footer, header, hgroup, 
+  menu, nav, section { display: block; }
+</style>
+</head>
+<body>
+	<div style="display: flex; flex-flow: row;">
+	  	<div style="display: flex; flex-flow: column; width: 60px; text-align: center;">
+		  	<label for="fname"> X:</label>
+		  	<input type="text" id="localX" name="xname" value="53"><br><br>
+		</div>
+		 <div style="display: flex; flex-flow: column; width: 60px; text-align: center;">
+		  	<label for="lname"> Y:</label>
+		  	<input type="text" id="localY" name="yname" value="36"><br><br>
+		</div>
+		<div style="display: flex; flex-flow: column; width: 60px; text-align: center;">
+		  	<label for="fname"> Z:</label>
+		  	<input type="text" id="localZ" name="zname" value="2"><br><br>
+		</div>
+	 </div>
+	<input type="submit" value="Submit" onclick="genData()">
+	<input type='file' onchange="readURL(this);" />
+  	<div style="display: flex; flex-flow: row;">
+	    <img id="blah" src="#" alt="your image" />
+	    <div style="display: flex; flex-flow: row; margin-left: 10px">
+			<div id="buttons"></div>
+	  	</div>
+  	</div>
+
+	<input type="submit" value="Download Data" onclick="SubmitData()">
+</body>
+<script type="text/javascript">
+	var dataPoints = [];
+	let spaceDefault = 0;
+	function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $('#blah')
+                    .attr('src', e.target.result)
+                    .width('40%')
+                    .height('auto');
+            };
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+    function checkText(id){
+    	id -= 1;
+    	let text = '';
+    	text = String.fromCharCode((id%26)+65);
+    	if(id >= 26){
+    		let loop = parseInt(id/26);
+    		console.log(loop);
+    		let txt = String.fromCharCode((id%26)+65);
+    		while(loop > 0){
+    			text += txt;
+    			loop --;
+    		}
+    	}
+    	return text;
+    }
+
+	function download(content, fileName, contentType) {
+	    var a = document.createElement("a");
+	    var file = new Blob([content], {type: contentType});
+	    a.href = URL.createObjectURL(file);
+	    a.download = fileName;
+	    a.click();
+	}
+
+	function checkIndex(name){
+			const index  = dataPoints.findIndex(x => x.name === name);
+			return (index < 0)? false : true;
+	}
+	function addCheckChildren(ele){
+		console.log(ele);
+		let numberEle = ele.name.split('_');
+		let num = parseInt(numberEle[1])-1;
+		let name = `${numberEle[0]}_${num}`;
+
+		if(checkIndex(name)){
+			ele.children[name] = spaceDefault;
+		}
+		num = parseInt(numberEle[1])+1;
+		name = `${numberEle[0]}_${num}`;
+		if(checkIndex(name)){
+			ele.children[name] = spaceDefault;
+		}
+		let charCodeStr =  ele.point3D[1];
+		let preName = charCodeStr - 1;
+		let nextName = charCodeStr + 1;
+		preName = (preName % 26 == 15 || preName % 26 == 9)? preName - 1 : preName;
+		nextName = (nextName % 26 == 15 || nextName % 26 == 9)? nextName + 1 : nextName;
+		if(preName < 0) return ele;
+		preName = checkText(preName);
+		nextName = checkText(nextName);
+		console.log("preName : ",preName);
+		console.log("nextName : ",nextName);       
+		name = `${preName}_${numberEle[1]}`;
+		if(checkIndex(name)){
+			ele.children[name] = spaceDefault;
+		}
+		name = `${nextName}_${numberEle[1]}`;
+		if(checkIndex(name)){
+			ele.children[name] = spaceDefault;
+		}
+
+		return ele;
+	}
+
+	function handderDataAddChildren(){
+		dataPoints.forEach((ele,index)=>{
+			dataPoints[index] = addCheckChildren(ele);
+		});
+	}
+
+	function SubmitData(){
+
+		dataPoints.sort(
+    		(a,b) => a.point3D[1] - b.point3D[1]
+    	);
+
+		handderDataAddChildren();
+    	console.log(" >>>>>> ================= dataPoints ================= >>>>>>");
+		  const a = document.createElement("a");
+		  a.href = URL.createObjectURL(new Blob([JSON.stringify(dataPoints, null, 2)], {
+		    type: "text/plain"
+		  }));
+		  a.setAttribute("download", "data.txt");
+		  document.body.appendChild(a);
+		  a.click();
+		  document.body.removeChild(a);
+	}
+
+    function doSomething(name,data){
+    	if(isMouseDown){
+    		const keyName = name;
+	    	const newData = {
+		    	    			'children': {},
+		    	    			'name': name,
+		    	    			'point2D': {'x': data['x'], 'y': data['y']},
+		    	    			'point3D': [data['x'],data['y'],data['z']],
+		    	    		}
+		   	const index  = dataPoints.findIndex(x => x.name === name);
+    		if(index < 0){
+		    	dataPoints.push(newData);
+		    	$(`button[name=${name}]`).css("background-color","#40ff00");
+    		}
+    	}
+    }
+    function doClick(name,data){
+		const keyName = name;
+    	const newData = {
+	    	    			'children': {},
+	    	    			'name': name,
+	    	    			'point2D': {'x': data['x'], 'y': data['y']},
+	    	    			'point3D': [data['x'],data['y'],data['z']],
+	    	    		}
+		   	const index  = dataPoints.findIndex(x => x.name === name);
+		if(index < 0){
+		    	dataPoints.push(newData);
+		    	$(`button[name=${name}]`).css("background-color","#40ff00");
+    	}else{
+    			dataPoints.splice(index, 1);
+		    	$(`button[name=${name}]`).css("background-color","#e7e7e7");
+		    	$(`button[name=${name}]`).css("border","1px solid #555555");
+    		}
+    }
+    function genData(){
+    	const x = $('#localX').val();
+    	const y = $('#localY').val();
+    	const z = $('#localZ').val();
+		const buttonDiv = document.getElementById("buttons");
+		for(let i = 0; i <= x; i++) {
+			let label = document.createElement("label");
+			const rows =  document.createElement("div");
+			rows.style["display"]= 'flex';
+			rows.style["flex-flow"]= 'row';
+			if(i % 26 == 15 || i % 26 == 9){  // Chu cai khong co trong ban do
+				continue;
+			}
+			if(i!==0){
+				let text = String.fromCharCode(i+64);
+				let divlable = document.createElement("div");
+				divlable.style.width = '25px';
+				divlable.style.height = '25px';
+				label.innerHTML = checkText(i);
+				divlable.appendChild(label);
+				rows.appendChild(divlable);
+			}
+			for(let j = 0; j < y; j++) {
+				if(i===0){
+					let labelnumber = document.createElement("label");
+					labelnumber.innerHTML = j.toString();
+					let divnumber = document.createElement("div");
+					divnumber.style.width = '25px';
+					divnumber.style.height = '25px';
+					divnumber.appendChild(labelnumber);
+					rows.appendChild(divnumber);
+				}else{
+					let button = document.createElement("button");
+				    button.style.width = '25px';
+				    button.style.height = '25px';
+				    button.name = `${label.innerHTML}_${j+1}`;
+				    const data = {'x': parseInt(y) - j,'y': i,'z': parseInt(z)};
+				    button.onclick = function() {doClick(button.name,data)};
+    				button.onmouseover = function() {doSomething(button.name,data)};
+				    button.style["background-color"] = "#e7e7e7";
+  					button.style["border"] = '1px solid #555555';
+				    rows.appendChild(button);
+				}
+			}
+			buttonDiv.appendChild(rows);
+		}
+	}
+</script>>
+</html>
+
